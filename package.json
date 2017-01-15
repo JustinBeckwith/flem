@@ -10,7 +10,11 @@
     "postinstall": "typings install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["App Engine", "Emulator", "dev_appserver"],
+  "keywords": [
+    "App Engine",
+    "Emulator",
+    "dev_appserver"
+  ],
   "author": "Justin Beckwith<justin.beckwith@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
@@ -19,6 +23,8 @@
     "dockerode": "^2.3.1",
     "dockerode-build": "^1.1.5",
     "fs-extra": "^1.0.0",
+    "js-yaml": "^3.7.0",
+    "lodash": "^4.17.4",
     "uuid": "^3.0.1",
     "yargs": "^6.6.0"
   },
