@@ -1,34 +1,106 @@
 import Runtime from './runtimes';
 import * as path from 'path';
-import {spawn} from 'child_process';
+import {spawn, ChildProcess} from 'child_process';
 let chokidar = require('chokidar');
 let fs = require('fs-extra');
-import _ from 'lodash';
+import * as _ from 'lodash';
 import RuntimeDetector from './runtimeDetector';
+import {EventEmitter} from 'events';
+let uuid = require('uuid/v4');
 
-export class Builder {
+export class Builder extends EventEmitter {
   
+  public runResults: RunResults;
+
   constructor() {
-  }
+    super();
+  }  
 
   /**
    * Perform a docker build of a given directory, and then re-build when
    * changes are made to files within the directory.  
    */
-  public buildLive(dir: string) {
-    this.build(dir).then(() => {
-      chokidar.watch(dir, { ignoreInitial:true }).on('all', (event, path) => {
-        console.log('chokidar!: ' + event + ", " + path);
-        this.build(dir);
-      });
+  public buildLive(dir: string, port: number) {
+    this.build(dir).then((results) => {
+      this.runResults = this.run(dir, 'myapp', port);
+      chokidar.watch(dir, { 
+          ignoreInitial: true,
+          ignored: results.generatedFiles
+        }).on('all', (event, path) => {
+          console.log('chokidar!: ' + event + ", " + path);
+          this.stop(this.runResults.name).then(() => {
+            console.log('Process stopped, rebuilding container...');
+            this.buildLive(dir, port);
+          });
+        });
     }); 
+  }
+
+  /**
+   * Run a given docker image.  
+   */
+  public run(dir: string, imageName: string, port: number): RunResults {
+    let name = uuid();
+    console.log('uuid:' + name);
+    let server = spawn('docker', [
+          'run', '-i', '--name', name, '-p', port + ':8080', imageName
+        ], { 
+          cwd: dir
+        })
+      .on('close', (code) => {
+        console.log(`RUN process exited with code ${code}`);
+      }).on('error', (err) => {
+        console.log(`RUN process exited with err`);
+      }).on('exit', (code, signal) => {
+        console.log(`RUN process exited with code ${code} and signal ${signal}`);
+      });
+      server.stdout.setEncoding('utf8');
+      server.stderr.setEncoding('utf8');
+      server.stderr.on('data', (data) => {
+        console.error(data);
+      });
+      server.stdout.on('data', (data) => {
+        console.log(data);
+      });
+    return {
+      server: server,
+      name: name
+    };
+  }
+
+  /**
+   * Stop a given docker process. 
+   */
+  public stop(name: string) {
+    return new Promise((resolve, reject) => {
+      let server = spawn('docker', [
+          'stop', name
+        ])
+      .on('close', (code) => {
+        console.log(`STOP process exited with code ${code}`);
+      }).on('error', (err) => {
+        console.log(`STOP process exited with err`);
+        reject();
+      }).on('exit', (code, signal) => {
+        console.log(`STOP process exited with code ${code} and signal ${signal}`);
+        resolve();
+      });
+      server.stdout.setEncoding('utf8');
+      server.stderr.setEncoding('utf8');
+      server.stderr.on('data', (data) => {
+        console.error(data);
+      });
+      server.stdout.on('data', (data) => {
+        console.log(data);
+      });
+    });
   }
 
   /**
    * Perform the docker build of a given directory.  
    */
   public build(dir: string) {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<BuildResults>((resolve, reject) => {
       this.prepare(dir).then((generatedFiles) => {
         console.log(`building docker image in ${dir}`);
         let server = spawn('docker', [
@@ -37,11 +109,11 @@ export class Builder {
             cwd: dir
           })
         .on('close', (code) => {
-          console.log(`child process exited with code ${code}`);
+          console.log(`BUILD process exited with code ${code}`);
         }).on('error', (err) => {
-          console.log(`child process exited with err`);
+          console.log(`BUILD process exited with err`);
         }).on('exit', (code, signal) => {
-          console.log(`child process exited with code ${code} and signal ${signal}`);
+          console.log(`BUILD process exited with code ${code} and signal ${signal}`);
           generatedFiles.forEach((file) => {
             fs.unlink(file, (err) => {
               if (err) {
@@ -49,15 +121,15 @@ export class Builder {
               }
             })
           })
-          return (code == 0) ? resolve() : reject();
+          return (code == 0) ? resolve({ generatedFiles: generatedFiles}) : reject();
         });
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          console.error(data);
+          console.error(_.trimEnd(data, ["\n"]));
         });
         server.stdout.on('data', (data) => {
-          console.log(data);
+          console.log(_.trimEnd(data, ["\n"]));
         });
       });
     });
@@ -91,4 +163,13 @@ export class Builder {
   }
 
 
+}
+
+class BuildResults {
+  public generatedFiles: Array<string>;
+}
+
+class RunResults {
+  public server: ChildProcess;
+  public name: string;
 }
