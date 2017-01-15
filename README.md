@@ -7,6 +7,9 @@ Flem is super ultra expiremental, and under active development.
 ## Installation
 `npm install -g flem`
 
+## Usage
+
+
 ## License
 [Apache 2.0](LICENSE.md)
 

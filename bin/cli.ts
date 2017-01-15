@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import {Builder} from '../lib/builder';
 import * as program from 'commander';
-import {Builder} from './builder';
 
-let version = require('./package.json').version;
+let version = require('../package.json').version;
 
 program
   .version(version)

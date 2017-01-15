@@ -144,8 +144,8 @@ export class Builder extends EventEmitter {
     return new Promise((resolve, reject) => {
       RuntimeDetector.getRuntime(dir).then((runtime: Runtime) => {
         if (runtime != Runtime.Custom) {
-          let dockerfilePath = path.join(__dirname, "dockerfiles", runtime.toString(), "Dockerfile");
-          let dockerIgnorePath = path.join(__dirname, "dockerfiles", ".dockerignore");
+          let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
+          let dockerIgnorePath = path.join(__dirname, "../dockerfiles", ".dockerignore");
           let generatedDockerfilePath = path.join(dir, "Dockerfile");
           let generatedDockerIgnorePath = path.join(dir, ".dockerignore");
           fs.copy(dockerfilePath, generatedDockerfilePath, (err) => {
