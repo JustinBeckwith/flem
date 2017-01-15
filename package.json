@@ -1,0 +1,29 @@
+{
+  "name": "flem",
+  "version": "1.0.0",
+  "description": "Flem is a local emulator for the App Engine Flexible Environment.",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run build:live",
+    "build:live": "tsc --watch",
+    "build": "tsc",
+    "postinstall": "typings install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["App Engine", "Emulator", "dev_appserver"],
+  "author": "Justin Beckwith<justin.beckwith@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "chokidar": "^1.6.1",
+    "commander": "^2.9.0",
+    "dockerode": "^2.3.1",
+    "dockerode-build": "^1.1.5",
+    "fs-extra": "^1.0.0",
+    "uuid": "^3.0.1",
+    "yargs": "^6.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^2.1.5",
+    "typings": "^2.1.0"
+  }
+}
