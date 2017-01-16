@@ -1,4 +1,5 @@
 # Flem
+[![Build Status](https://travis-ci.org/JustinBeckwith/flem.svg?branch=master)](https://travis-ci.org/JustinBeckwith/flem)
 Flem is a local emulator that makes testing applications written for the App Engine flexible environment easier.  It manages generating docker files, building your containers, and running them in a way that's kinda mostly like running them in production. 
 
 Flem is super ultra expiremental, and under active development.  
@@ -8,7 +9,7 @@ Flem is super ultra expiremental, and under active development.
 `npm install -g flem`
 
 ## Usage
-
+`flem -p 3001 ~/app`
 
 ## License
 [Apache 2.0](LICENSE.md)
