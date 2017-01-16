@@ -9,7 +9,7 @@
     "start": "npm run build:live",
     "build:live": "tsc --watch",
     "build": "tsc",
-    "postinstall": "typings install",
+    "postinstall": "typings install && npm run build",
     "test": "mocha",
     "example": "node ./bin/cli.js -p 8080 ~/Code/express-test/"
   },
