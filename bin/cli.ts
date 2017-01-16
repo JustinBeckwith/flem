@@ -10,12 +10,10 @@ program
   .parse(process.argv);
 
 console.log('You are listening on port %s', program['port']);
-console.log(program.args);
-
-let sourcePath = '/Users/beckwith/Code/express-test/';
+let sourcePath = program.args[0];
 
 let builder = new Builder();
-builder.buildLive(sourcePath, 8003);
+builder.runHot(sourcePath, program['port']);
 
 process.stdin.resume();
 
@@ -23,11 +21,9 @@ process.stdin.resume();
  * Make sure to clean up any docker processes hanging around on exit. 
  */
 process.on('SIGINT', () => {
-  if (builder && builder.runResults && builder.runResults.server) {
-    console.log('Exit docker process...');
-    builder.stop(builder.runResults.name).then(() => {
-      console.log('Docker process cleaned up, exiting.');
-      process.exit();
-    });
-  }
+  console.log('Exit docker process...');
+  builder.stop().then(() => {
+    console.log('Docker process cleaned up, exiting.');
+    process.exit();
+  });
 });

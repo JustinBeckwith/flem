@@ -6,6 +6,8 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/.DS_Store": true,
-    "**/*.js": true
+    "test/*.js": true,
+    "bin/**/*.js": true,
+    "lib/**/*.js": true
   }
 }

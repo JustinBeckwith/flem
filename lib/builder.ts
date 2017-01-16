@@ -10,7 +10,7 @@ let uuid = require('uuid/v4');
 
 export class Builder extends EventEmitter {
   
-  public runResults: RunResults;
+  protected runResults: RunResults;
 
   constructor() {
     super();
@@ -20,17 +20,17 @@ export class Builder extends EventEmitter {
    * Perform a docker build of a given directory, and then re-build when
    * changes are made to files within the directory.  
    */
-  public buildLive(dir: string, port: number) {
-    this.build(dir).then((results) => {
+  public runHot(dir: string, port: number) {
+    return this.build(dir).then((results) => {
       this.runResults = this.run(dir, 'myapp', port);
       chokidar.watch(dir, { 
           ignoreInitial: true,
           ignored: results.generatedFiles
         }).on('all', (event, path) => {
-          console.log('chokidar!: ' + event + ", " + path);
-          this.stop(this.runResults.name).then(() => {
+          console.log('File changed: ' + event + ", " + path);
+          this.stop().then(() => {
             console.log('Process stopped, rebuilding container...');
-            this.buildLive(dir, port);
+            this.runHot(dir, port);
           });
         });
     }); 
@@ -41,7 +41,7 @@ export class Builder extends EventEmitter {
    */
   public run(dir: string, imageName: string, port: number): RunResults {
     let name = uuid();
-    console.log('uuid:' + name);
+    this.emit(AppEvents.APP_STARTING);
     let server = spawn('docker', [
           'run', '-i', '--name', name, '-p', port + ':8080', imageName
         ], { 
@@ -71,10 +71,11 @@ export class Builder extends EventEmitter {
   /**
    * Stop a given docker process. 
    */
-  public stop(name: string) {
+  public stop() {
     return new Promise((resolve, reject) => {
+      this.emit(AppEvents.APP_STOPPING);
       let server = spawn('docker', [
-          'stop', name
+          'stop', this.runResults.name
         ])
       .on('close', (code) => {
         console.log(`STOP process exited with code ${code}`);
@@ -83,6 +84,7 @@ export class Builder extends EventEmitter {
         reject();
       }).on('exit', (code, signal) => {
         console.log(`STOP process exited with code ${code} and signal ${signal}`);
+        this.emit(AppEvents.APP_STOPPED);
         resolve();
       });
       server.stdout.setEncoding('utf8');
@@ -101,6 +103,7 @@ export class Builder extends EventEmitter {
    */
   public build(dir: string) {
     return new Promise<BuildResults>((resolve, reject) => {
+      this.emit(AppEvents.BUILD_STARTED);
       this.prepare(dir).then((generatedFiles) => {
         console.log(`building docker image in ${dir}`);
         let server = spawn('docker', [
@@ -121,6 +124,7 @@ export class Builder extends EventEmitter {
               }
             })
           })
+          this.emit(AppEvents.BUILD_COMPLETE);
           return (code == 0) ? resolve({ generatedFiles: generatedFiles}) : reject();
         });
         server.stdout.setEncoding('utf8');
@@ -172,4 +176,14 @@ class BuildResults {
 class RunResults {
   public server: ChildProcess;
   public name: string;
+}
+
+export class AppEvents {
+  public static BUILD_STARTED = "BUILD_STARTED";
+  public static BUILD_COMPLETE = "BUILD_COMPLETE";
+  public static APP_STARTING = "APP_STARTING";
+  public static APP_STARTED = "APP_STARTED";
+  public static APP_RESTARTING = "APP_RESTARTING";
+  public static APP_STOPPING = "APP_STOPPING";
+  public static APP_STOPPED = "APP_STOPPED";
 }

@@ -2,14 +2,16 @@
   "name": "flem",
   "version": "1.0.0",
   "description": "Flem is a local emulator for the App Engine Flexible Environment.",
-  "main": "index.js",
+  "bin": {
+    "flem": "./bin/cli.js"
+  },
   "scripts": {
     "start": "npm run build:live",
     "build:live": "tsc --watch",
     "build": "tsc",
     "postinstall": "typings install",
     "test": "mocha",
-    "example": "node ./bin/cli.js -p 8080"
+    "example": "node ./bin/cli.js -p 8080 ~/Code/express-test/"
   },
   "keywords": [
     "App Engine",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "mocha": "^3.2.0",
+    "request": "^2.79.0",
     "typescript": "^2.1.5",
     "typings": "^2.1.0"
   }
