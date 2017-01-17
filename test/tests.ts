@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as request from 'request';
 
 describe('flem', function() {
-  this.timeout(30000);
+  this.timeout(60000);
 
   let currentBuilder:Builder = null;
 
