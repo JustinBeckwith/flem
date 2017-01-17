@@ -8,10 +8,22 @@ Flem is super ultra expiremental, and under active development.
 **This is a not an official Google project.**
 
 ## Installation
+Flem requires [Docker](https://www.docker.com/) to be installed and available on the path.  After that ...
+
 `npm install -g flem`
 
 ## Usage
-`flem -p 3001 ~/app`
+Flem is a command line tool, and a library.  You can `cd` into any App Engine Flexible application with an `app.yaml`, and just run:
+
+`flem`
+
+That's it!  You can also customize the port you run on:
+
+`flem -p 3001`
+
+Or run it against a different path:
+
+`flem -p 3001 ~/Code/myapp`
 
 ## License
 [Apache 2.0](LICENSE.md)
