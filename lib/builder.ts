@@ -159,7 +159,20 @@ export class Builder extends EventEmitter {
               return reject(err);
             }
             let template = Handlebars.compile(data);
-            let context = { entrypoint: config.entrypoint };
+            let context: any = { entrypoint: config.entrypoint };
+            if (runtime == Runtime.Python) {
+              if (config.runtime_config && config.runtime_config.python_version) {
+                if (config.runtime_config.python_version == 2) {
+                  context.python_version = "python";
+                } else if (config.runtime_config.python_version == 3) {
+                  context.python_version = "python3.5";
+                } else {
+                  return reject(new Error("Invalid python runtime selected."));
+                }
+              } else {
+                context.python_version = "python";
+              }
+            }
             let output = template(context);
             fs.writeFile(generatedDockerfilePath, output, (err) => {
               if (err) return resolve(err);

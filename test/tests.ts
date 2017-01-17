@@ -35,6 +35,15 @@ describe('flem', function() {
     });
   });
 
+  // python
+  it('should build the sample python app', function() {
+    let appPath = path.join(__dirname, 'apps/ruby');
+    currentBuilder = new Builder();
+    return currentBuilder.runHot(appPath, 3003).then(() => {
+      return checkResponse("http://localhost:3003/");
+    });
+  });
+
 });
 
 

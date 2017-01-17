@@ -4,3 +4,4 @@ bin/*.js
 lib/*.js
 test/*.js
 typings/
+test/apps/python/env
