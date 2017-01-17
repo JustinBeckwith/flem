@@ -172,8 +172,15 @@ export class Builder extends EventEmitter {
               } else {
                 context.python_version = "python";
               }
+            } else if (runtime == Runtime.PHP) {
+              context.document_root = "/app";
+              if (config.runtime_config && config.runtime_config.document_root) {
+                context.document_root = path.join('/app', config.runtime_config.document_root);
+              }
             }
             let output = template(context);
+            console.log(output);
+            //process.exit();
             fs.writeFile(generatedDockerfilePath, output, (err) => {
               if (err) return resolve(err);
               fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
