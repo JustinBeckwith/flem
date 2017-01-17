@@ -8,6 +8,14 @@ import RuntimeDetector from './runtimeDetector';
 import {EventEmitter} from 'events';
 let uuid = require('uuid/v4');
 let Handlebars = require('handlebars');
+let winston = require('winston');
+
+let logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.Console)()
+  ]
+});
+logger.cli();
 
 export class Builder extends EventEmitter {
   
@@ -15,6 +23,7 @@ export class Builder extends EventEmitter {
 
   constructor() {
     super();
+    logger.level = winston.level;
   }  
 
   /**
@@ -24,14 +33,14 @@ export class Builder extends EventEmitter {
   public runHot(dir: string, port: number) {
     return this.build(dir).then((results) => {
       this.runResults = this.run(dir, 'myapp', port);
-      console.log('Running emulator on port %s', port);
+      logger.info('Running emulator on port %s', port);
       chokidar.watch(dir, { 
           ignoreInitial: true,
           ignored: results.generatedFiles
         }).on('all', (event, path) => {
-          console.log('File changed: ' + event + ", " + path);
+          logger.info('File changed: ' + event + ", " + path);
           this.stop().then(() => {
-            console.log('Process stopped, rebuilding container...');
+            logger.info('Process stopped, rebuilding container...');
             this.runHot(dir, port);
           });
         });
@@ -50,19 +59,19 @@ export class Builder extends EventEmitter {
           cwd: dir
         })
       .on('close', (code) => {
-        console.log(`RUN process exited with code ${code}`);
+        logger.debug(`RUN process exited with code ${code}`);
       }).on('error', (err) => {
-        console.log(`RUN process exited with err`);
+        logger.error(`RUN process exited with err`);
       }).on('exit', (code, signal) => {
-        console.log(`RUN process exited with code ${code} and signal ${signal}`);
+        logger.debug(`RUN process exited with code ${code} and signal ${signal}`);
       });
       server.stdout.setEncoding('utf8');
       server.stderr.setEncoding('utf8');
       server.stderr.on('data', (data) => {
-        console.error(data);
+        logger.error(data);
       });
       server.stdout.on('data', (data) => {
-        console.log(data);
+        logger.info(data);
       });
     return {
       server: server,
@@ -80,22 +89,22 @@ export class Builder extends EventEmitter {
           'stop', this.runResults.name
         ])
       .on('close', (code) => {
-        console.log(`STOP process exited with code ${code}`);
+        logger.debug(`STOP process exited with code ${code}`);
       }).on('error', (err) => {
-        console.log(`STOP process exited with err`);
+        logger.error(`STOP process exited with err`);
         reject();
       }).on('exit', (code, signal) => {
-        console.log(`STOP process exited with code ${code} and signal ${signal}`);
+        logger.debug(`STOP process exited with code ${code} and signal ${signal}`);
         this.emit(AppEvents.APP_STOPPED);
         resolve();
       });
       server.stdout.setEncoding('utf8');
       server.stderr.setEncoding('utf8');
       server.stderr.on('data', (data) => {
-        console.error(data);
+        logger.error(data);
       });
       server.stdout.on('data', (data) => {
-        console.log(data);
+        logger.info(data);
       });
     });
   }
@@ -107,22 +116,22 @@ export class Builder extends EventEmitter {
     return new Promise<BuildResults>((resolve, reject) => {
       this.emit(AppEvents.BUILD_STARTED);
       this.prepare(dir).then((generatedFiles) => {
-        console.log(`building docker image in ${dir}`);
+        logger.info(`Building docker image in ${dir}...`);
         let server = spawn('docker', [
             'build', '.', '-t', 'myapp'
           ], { 
             cwd: dir
           })
         .on('close', (code) => {
-          console.log(`BUILD process exited with code ${code}`);
+          logger.debug(`BUILD process exited with code ${code}`);
         }).on('error', (err) => {
-          console.log(`BUILD process exited with err`);
+          logger.error(`BUILD process exited with err`);
         }).on('exit', (code, signal) => {
-          console.log(`BUILD process exited with code ${code} and signal ${signal}`);
+          logger.debug(`BUILD process exited with code ${code} and signal ${signal}`);
           generatedFiles.forEach((file) => {
             fs.unlink(file, (err) => {
               if (err) {
-                console.error("Error cleaning up file(s).");
+                logger.error("Error cleaning up file(s).");
               }
             })
           })
@@ -132,10 +141,10 @@ export class Builder extends EventEmitter {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          console.error(_.trimEnd(data, ["\n"]));
+          logger.error(_.trimEnd(data, ["\n"]));
         });
         server.stdout.on('data', (data) => {
-          console.log(_.trimEnd(data, ["\n"]));
+          logger.info(_.trimEnd(data, ["\n"]));
         });
       });
     });
@@ -180,8 +189,6 @@ export class Builder extends EventEmitter {
               }
             }
             let output = template(context);
-            console.log(output);
-            //process.exit();
             fs.writeFile(generatedDockerfilePath, output, (err) => {
               if (err) return resolve(err);
               fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
