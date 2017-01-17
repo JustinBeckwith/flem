@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import RuntimeDetector from './runtimeDetector';
 import {EventEmitter} from 'events';
 let uuid = require('uuid/v4');
+let Handlebars = require('handlebars');
 
 export class Builder extends EventEmitter {
   
@@ -146,17 +147,26 @@ export class Builder extends EventEmitter {
    */
   protected prepare(dir: string): Promise<Array<string>> {
     return new Promise((resolve, reject) => {
-      RuntimeDetector.getRuntime(dir).then((runtime: Runtime) => {
+      RuntimeDetector.getConfig(dir).then((config: any) => {
+        let runtime = RuntimeDetector.getRuntime(config);
         if (runtime != Runtime.Custom) {
           let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
           let dockerIgnorePath = path.join(__dirname, "../dockerfiles", ".dockerignore");
           let generatedDockerfilePath = path.join(dir, "Dockerfile");
           let generatedDockerIgnorePath = path.join(dir, ".dockerignore");
-          fs.copy(dockerfilePath, generatedDockerfilePath, (err) => {
-            if (err) return reject(err);
-            fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
-              if (err) return reject(err);
-              return resolve([generatedDockerfilePath, generatedDockerIgnorePath]);
+          fs.readFile(dockerfilePath, 'utf-8', (err, data) => {
+            if (err) {
+              return reject(err);
+            }
+            let template = Handlebars.compile(data);
+            let context = { entrypoint: config.entrypoint };
+            let output = template(context);
+            fs.writeFile(generatedDockerfilePath, output, (err) => {
+              if (err) return resolve(err);
+              fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
+                if (err) return reject(err);
+                return resolve([generatedDockerfilePath, generatedDockerIgnorePath]);
+              });
             });
           });
         } else {

@@ -9,31 +9,35 @@ export default class runtimeDetector {
   /**
    * Attempt to read the runtime from an app.yaml
    */
-  public static getRuntime(dir: string): Promise<Runtime> {
-    return new Promise<Runtime>((resolve, reject) => {
+  public static getRuntime(config): Runtime {
+    switch(config.runtime) {
+      case "node":
+      case "nodejs":
+        return Runtime.Nodejs;
+      case "python":
+        return Runtime.Python;
+      case "go":
+        return Runtime.Go;
+      case "php":
+        return Runtime.PHP;
+      case "ruby":
+        return Runtime.Ruby;
+      case "java":
+        return Runtime.Java;
+      case "custom":
+        return Runtime.Custom;
+    }
+  }
+
+  public static getConfig(dir: string) {
+    return new Promise((resolve, reject) => {
       let yamlPath = path.join(dir, "app.yaml");
       fs.readFile(yamlPath, 'utf8', (err, data) => {
         if (err) {
           return reject(err);
         } 
         let config = YAML.safeLoad(data);
-        switch(config.runtime) {
-          case "node":
-          case "nodejs":
-            return resolve(Runtime.Nodejs);
-          case "python":
-            return resolve(Runtime.Python);
-          case "go":
-            return resolve(Runtime.Go);
-          case "php":
-            return resolve(Runtime.PHP);
-          case "ruby":
-            return resolve(Runtime.Ruby);
-          case "java":
-            return resolve(Runtime.Java);
-          case "custom":
-            return resolve(Runtime.Custom);
-        }
+        return resolve(config);
       });
     });
   }

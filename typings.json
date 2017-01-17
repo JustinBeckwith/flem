@@ -1,11 +1,13 @@
 {
   "dependencies": {
     "commander": "registry:dt/commander#2.3.0+20161118092844",
+    "fs-extra": "registry:dt/fs-extra#0.0.0+20170109012028",
     "request": "registry:dt/request#0.0.0+20161230173603",
     "uuid": "registry:npm/uuid#3.0.1+20161206160008"
   },
   "globalDependencies": {
     "chokidar": "registry:dt/chokidar#1.4.3+20170102220554",
+    "handlebars": "registry:dt/handlebars#4.0.5+20160810231743",
     "mocha": "registry:dt/mocha#2.2.5+20161221010438",
     "node": "registry:env/node#6.0.0+20170115054122"
   }
