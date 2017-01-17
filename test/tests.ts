@@ -2,11 +2,12 @@ import * as assert from 'assert';
 import {Builder} from '../lib/builder';
 import * as path from 'path';
 import * as request from 'request';
+import Runtime from '../lib/runtimes';
+
+let currentBuilder:Builder = null;
 
 describe('flem', function() {
   this.timeout(60000);
-
-  let currentBuilder:Builder = null;
 
   /**
    * After each test, attempt to stop the builder. 
@@ -17,53 +18,23 @@ describe('flem', function() {
     }
   }); 
   
-  // nodejs
-  it('should build the sample node.js app', function() {
-    let appPath = path.join(__dirname, 'apps/nodejs');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3001).then(() => {
-      return checkResponse("http://localhost:3001/");
-    });
-  });
-
-  // ruby
-  it('should build the sample ruby app', function() {
-    let appPath = path.join(__dirname, 'apps/ruby');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3002).then(() => {
-      return checkResponse("http://localhost:3002/");
-    });
-  });
-
-  // python
-  it('should build the sample python app', function() {
-    let appPath = path.join(__dirname, 'apps/python');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3003).then(() => {
-      return checkResponse("http://localhost:3003/");
-    });
-  });
-
-  // php
-  it('should build the sample php app', function() {
-    let appPath = path.join(__dirname, 'apps/php');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3004).then(() => {
-      return checkResponse("http://localhost:3004/");
-    });
-  });
-
-  // custom
-  it('should build the sample custom app', function() {
-    let appPath = path.join(__dirname, 'apps/custom');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3005).then(() => {
-      return checkResponse("http://localhost:3005/");
-    });
-  });
-
+  checkRuntime(Runtime.Nodejs);
+  checkRuntime(Runtime.Ruby);
+  checkRuntime(Runtime.PHP);
+  checkRuntime(Runtime.Python);
+  checkRuntime(Runtime.Go);
+  checkRuntime(Runtime.Custom);
 });
 
+function checkRuntime(runtime: Runtime) {
+  it(`should build the sample ${runtime} app`, function() {
+    let appPath = path.join(__dirname, `apps/${runtime}`);
+    currentBuilder = new Builder();
+    return currentBuilder.runHot(appPath, 3000).then(() => {
+      return checkResponse("http://localhost:3000/");
+    });
+  });
+}
 
 
 function checkResponse(endpoint: string) {
