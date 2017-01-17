@@ -24,6 +24,7 @@ export class Builder extends EventEmitter {
   public runHot(dir: string, port: number) {
     return this.build(dir).then((results) => {
       this.runResults = this.run(dir, 'myapp', port);
+      console.log('Running emulator on port %s', port);
       chokidar.watch(dir, { 
           ignoreInitial: true,
           ignored: results.generatedFiles

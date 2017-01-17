@@ -9,11 +9,11 @@ program
   .option('-p, --port <port>', 'The port to listen on.', parseInt)
   .parse(process.argv);
 
-console.log('You are listening on port %s', program['port']);
-let sourcePath = program.args[0];
-
+let sourcePath = program.args[0] || process.cwd();
+let port = program['port'] || 3000;
 let builder = new Builder();
-builder.runHot(sourcePath, program['port']);
+builder.runHot(sourcePath, port);
+
 
 process.stdin.resume();
 
