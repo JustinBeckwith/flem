@@ -1,6 +1,6 @@
 {
   "name": "flem",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Flem is a local emulator for the App Engine Flexible Environment.",
   "bin": {
     "flem": "./bin/cli.js"
@@ -9,9 +9,16 @@
     "start": "npm run build:live",
     "build:live": "tsc --watch",
     "build": "tsc",
-    "postinstall": "typings install && npm run build",
-    "test": "mocha",
-    "example": "node ./bin/cli.js -p 8080 ~/Code/express-test/"
+    "pretest": "typings install && npm run build",
+    "prepublish": "typings install && npm run build",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustinBeckwith/flem.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JustinBeckwith/flem/issues"
   },
   "keywords": [
     "App Engine",
