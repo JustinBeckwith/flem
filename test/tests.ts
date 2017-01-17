@@ -15,16 +15,7 @@ describe('flem', function() {
     if (currentBuilder) {
       return currentBuilder.stop();
     }
-  });
-
-  // php
-  it('should build the sample php app', function() {
-    let appPath = path.join(__dirname, 'apps/php');
-    currentBuilder = new Builder();
-    return currentBuilder.runHot(appPath, 3004).then(() => {
-      return checkResponse("http://localhost:3004/");
-    });
-  });
+  }); 
   
   // nodejs
   it('should build the sample node.js app', function() {
@@ -50,6 +41,24 @@ describe('flem', function() {
     currentBuilder = new Builder();
     return currentBuilder.runHot(appPath, 3003).then(() => {
       return checkResponse("http://localhost:3003/");
+    });
+  });
+
+  // php
+  it('should build the sample php app', function() {
+    let appPath = path.join(__dirname, 'apps/php');
+    currentBuilder = new Builder();
+    return currentBuilder.runHot(appPath, 3004).then(() => {
+      return checkResponse("http://localhost:3004/");
+    });
+  });
+
+  // custom
+  it('should build the sample custom app', function() {
+    let appPath = path.join(__dirname, 'apps/custom');
+    currentBuilder = new Builder();
+    return currentBuilder.runHot(appPath, 3005).then(() => {
+      return checkResponse("http://localhost:3005/");
     });
   });
 
