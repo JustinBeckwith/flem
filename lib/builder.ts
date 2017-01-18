@@ -84,11 +84,11 @@ export class Builder extends EventEmitter {
         logger.debug(`STOP process exited with code ${code}`);
       }).on('error', (err) => {
         logger.error(`STOP process exited with err`);
-        reject();
+        return reject();
       }).on('exit', (code, signal) => {
         logger.debug(`STOP process exited with code ${code} and signal ${signal}`);
         this.emit(AppEvents.APP_STOPPED);
-        resolve();
+        return resolve();
       });
       server.stdout.setEncoding('utf8');
       server.stderr.setEncoding('utf8');
@@ -107,7 +107,7 @@ export class Builder extends EventEmitter {
   public build(dir: string): Promise<BuildResults> {
     return new Promise<BuildResults>((resolve, reject) => {
       this.emit(AppEvents.BUILD_STARTED);
-      this.prepare(dir).then((generatedFiles) => {
+      this.prepare(dir).then(generatedFiles => {
         logger.info(`Building docker image in ${dir}...`);
         let server = spawn('docker', [
             'build', '.', '-t', 'myapp'
@@ -150,49 +150,52 @@ export class Builder extends EventEmitter {
    * of generated file paths.  
    */
   protected prepare(dir: string): Promise<Array<string>> {
-    return RuntimeDetector.getConfig(dir).then((config: any) => {
-      let runtime = RuntimeDetector.getRuntime(config);
-      if (runtime != Runtime.Custom) {
-        let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
-        let dockerIgnorePath = path.join(__dirname, "../dockerfiles", ".dockerignore");
-        let generatedDockerfilePath = path.join(dir, "Dockerfile");
-        let generatedDockerIgnorePath = path.join(dir, ".dockerignore");
-        fs.readFile(dockerfilePath, 'utf-8', (err, data) => {
-          if (err) {
-            throw err;
-          }
-          let template = Handlebars.compile(data);
-          let context: any = { entrypoint: config.entrypoint };
-          if (runtime == Runtime.Python) {
-            if (config.runtime_config && config.runtime_config.python_version) {
-              if (config.runtime_config.python_version == 2) {
-                context.python_version = "python";
-              } else if (config.runtime_config.python_version == 3) {
-                context.python_version = "python3.5";
+    return new Promise((resolve, reject) => {
+      RuntimeDetector.getConfig(dir).then((config: any) => {
+        let runtime = RuntimeDetector.getRuntime(config);
+        if (runtime != Runtime.Custom) {
+          let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
+          let dockerIgnorePath = path.join(__dirname, "../dockerfiles", ".dockerignore");
+          let generatedDockerfilePath = path.join(dir, "Dockerfile");
+          let generatedDockerIgnorePath = path.join(dir, ".dockerignore");
+          fs.readFile(dockerfilePath, 'utf-8', (err, data) => {
+            if (err) return resolve(err);
+            let template = Handlebars.compile(data);
+            let context: any = { entrypoint: config.entrypoint };
+            if (runtime == Runtime.Python) {
+              if (config.runtime_config && config.runtime_config.python_version) {
+                if (config.runtime_config.python_version == 2) {
+                  context.python_version = "python";
+                } else if (config.runtime_config.python_version == 3) {
+                  context.python_version = "python3.5";
+                } else {
+                  return reject(new Error("Invalid python runtime selected."));
+                }
               } else {
-                throw new Error("Invalid python runtime selected.");
+                context.python_version = "python";
               }
-            } else {
-              context.python_version = "python";
+            } else if (runtime == Runtime.PHP) {
+              context.document_root = "/app";
+              if (config.runtime_config && config.runtime_config.document_root) {
+                context.document_root = path.join('/app', config.runtime_config.document_root);
+              }
             }
-          } else if (runtime == Runtime.PHP) {
-            context.document_root = "/app";
-            if (config.runtime_config && config.runtime_config.document_root) {
-              context.document_root = path.join('/app', config.runtime_config.document_root);
-            }
-          }
-          let output = template(context);
-          fs.writeFile(generatedDockerfilePath, output, (err) => {
-            if (err) throw err;
-            fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
-              if (err) throw err;
-              return [generatedDockerfilePath, generatedDockerIgnorePath];
+            let output = template(context);
+            fs.writeFile(generatedDockerfilePath, output, (err) => {
+              if (err) return reject(err);
+              fs.copy(dockerIgnorePath, generatedDockerIgnorePath, (err) => {
+                if (err) return reject(err);
+                return resolve([generatedDockerfilePath, generatedDockerIgnorePath]);
+              });
             });
           });
-        });
-      } else {
-        return [];
-      }
+        } else {
+          return resolve([]);
+        }
+      }).catch(err => {
+        logger.error(err);
+        return reject(err);
+      });
     });
   }
 }
