@@ -7,7 +7,7 @@ import Runtime from '../lib/runtimes';
 let currentBuilder:Builder = null;
 
 describe('flem', function() {
-  this.timeout(60000);
+  this.timeout(90000);
 
   /**
    * After each test, attempt to stop the builder. 
