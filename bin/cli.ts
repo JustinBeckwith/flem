@@ -14,10 +14,15 @@ program
 // set the logging level
 let loglevel = program['verbose'] ? 'debug' : 'info';
 winston.level = loglevel;
+winston.cli();
 let sourcePath = program.args[0] || process.cwd();
 let port = program['port'] || 3000;
 let builder = new Builder();
-builder.runHot(sourcePath, port);
+builder.runHot(sourcePath, port)
+  .catch(err => {
+    winston.error(err);
+    process.exit();
+  });
 
 /**
  * Make sure to clean up any docker processes hanging around on exit. 

@@ -3,6 +3,7 @@ import * as path from 'path';
 import _ from 'lodash';
 import Runtime from './runtimes';
 import * as YAML from 'js-yaml';
+let logger = require('./logger');
 
 export default class runtimeDetector {
 
@@ -34,6 +35,7 @@ export default class runtimeDetector {
       let yamlPath = path.join(dir, "app.yaml");
       fs.readFile(yamlPath, 'utf8', (err, data) => {
         if (err) {
+          logger.error("No app.yaml found in the given directory.");
           return reject(err);
         } 
         let config = YAML.safeLoad(data);
