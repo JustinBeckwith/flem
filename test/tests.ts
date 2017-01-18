@@ -20,14 +20,15 @@ describe('flem', function() {
   
   checkRuntime(Runtime.Nodejs);
   checkRuntime(Runtime.Ruby);
-  checkRuntime(Runtime.PHP);
+  checkRuntime(Runtime.PHP, 120000);
   checkRuntime(Runtime.Python);
   checkRuntime(Runtime.Go);
   checkRuntime(Runtime.Custom);
 });
 
-function checkRuntime(runtime: Runtime) {
+function checkRuntime(runtime: Runtime, timeout?: number) {
   it(`should build the sample ${runtime} app`, function() {
+    this.timeout(timeout || 90000);
     let appPath = path.join(__dirname, `apps/${runtime}`);
     currentBuilder = new Builder();
     return currentBuilder.runHot(appPath, 3000).then(() => {
