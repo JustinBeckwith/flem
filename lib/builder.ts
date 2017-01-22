@@ -9,6 +9,7 @@ import {EventEmitter} from 'events';
 let uuid = require('uuid/v4');
 let Handlebars = require('handlebars');
 let logger = require('./logger');
+import ApplicationError from './applicationError';
 
 export class Builder extends EventEmitter {
   
@@ -83,7 +84,7 @@ export class Builder extends EventEmitter {
       .on('close', (code) => {
         logger.debug(`STOP process exited with code ${code}`);
       }).on('error', (err) => {
-        logger.error(`STOP process exited with err`);
+        logger.error(`STOP process exited with err ${err}`);
         return reject();
       }).on('exit', (code, signal) => {
         logger.debug(`STOP process exited with code ${code} and signal ${signal}`);
@@ -117,7 +118,13 @@ export class Builder extends EventEmitter {
         .on('close', (code) => {
           logger.debug(`BUILD process exited with code ${code}`);
         }).on('error', (err) => {
-          logger.error(`BUILD process exited with err`);
+          if (err == "Error: spawn docker ENOENT") {
+            let message = "Flem requires Docker to be installed, and available on the path.  Please visit https://www.docker.com/ to get started, and try again.";
+            let error = new ApplicationError(message);
+            return reject(error);
+          }
+          logger.error(`BUILD process exited with err ${err}`);
+          return reject(err);
         }).on('exit', (code, signal) => {
           logger.debug(`BUILD process exited with code ${code} and signal ${signal}`);
           generatedFiles.forEach((file) => {
@@ -169,7 +176,7 @@ export class Builder extends EventEmitter {
                 } else if (config.runtime_config.python_version == 3) {
                   context.python_version = "python3.5";
                 } else {
-                  return reject(new Error("Invalid python runtime selected."));
+                  return reject(new ApplicationError("Invalid python runtime selected."));
                 }
               } else {
                 context.python_version = "python";
@@ -193,7 +200,7 @@ export class Builder extends EventEmitter {
           return resolve([]);
         }
       }).catch(err => {
-        logger.error(err);
+        logger.debug(err);
         return reject(err);
       });
     });

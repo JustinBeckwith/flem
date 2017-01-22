@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import {Builder} from '../lib/builder';
 import * as program from 'commander';
+import ApplicationError from '../lib/applicationError';
 let winston = require('winston');
 
 let version = require('../package.json').version;
@@ -20,7 +21,11 @@ let port = program['port'] || 3000;
 let builder = new Builder();
 builder.runHot(sourcePath, port)
   .catch(err => {
-    winston.error(err);
+    if (err instanceof ApplicationError) {
+      winston.error(err.message);
+    } else {
+      winston.error(err);
+    }
     process.exit();
   });
 
