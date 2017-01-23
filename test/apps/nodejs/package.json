@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "qs": "^6.3.0"
+    "express": "^4.14.0"
   }
 }

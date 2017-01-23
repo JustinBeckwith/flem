@@ -14,6 +14,7 @@ import ApplicationError from './applicationError';
 export class Builder extends EventEmitter {
   
   protected runResults: RunResults;
+  protected currentConfig: any;
 
   constructor() {
     super();
@@ -45,10 +46,13 @@ export class Builder extends EventEmitter {
    */
   public run(dir: string, imageName: string, port: number): RunResults {
     let name = uuid();
+    let envVars = [].concat(...this.getEnvVars().map(item => {
+      return ['--env', item.name + "=" + item.value];
+    }));    
     this.emit(AppEvents.APP_STARTING);
     let server = spawn('docker', [
-          'run', '-i', '--name', name, '-p', port + ':8080', imageName
-        ], { 
+          'run', '-i', '--name', name, '-p', port + ':8080'
+        ].concat(envVars).concat([imageName]), { 
           cwd: dir
         })
       .on('close', (code) => {
@@ -151,6 +155,17 @@ export class Builder extends EventEmitter {
     });
   }
 
+  protected getEnvVars() {
+    let vars = [];
+    let service = (this.currentConfig && this.currentConfig.service) ? this.currentConfig.service : 'default';
+    vars.push({ name: "GAE_VERSION", value: "---local---" });
+    vars.push({ name: "GAE_SERVICE", value: service });
+    vars.push({ name: "GAE_INSTANCE", value: "---local---" });
+    vars.push({ name: "GCLOUD_PROJECT", value: "---local---" });
+    vars.push({ name: "PORT", value: 8080 });
+    return vars;
+  }
+
   /**
    * If needed, generate a Dockerfile and .dockerignore file inside
    * of the given directory, based on it's contents. Returns an Array
@@ -159,6 +174,7 @@ export class Builder extends EventEmitter {
   protected prepare(dir: string): Promise<Array<string>> {
     return new Promise((resolve, reject) => {
       RuntimeDetector.getConfig(dir).then((config: any) => {
+        this.currentConfig = config;
         let runtime = RuntimeDetector.getRuntime(config);
         if (runtime != Runtime.Custom) {
           let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
