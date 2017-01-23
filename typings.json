@@ -9,7 +9,7 @@
   "globalDependencies": {
     "chokidar": "registry:dt/chokidar#1.4.3+20170102220554",
     "handlebars": "registry:dt/handlebars#4.0.5+20160810231743",
-    "mocha": "registry:dt/mocha#2.2.5+20161221010438",
-    "node": "registry:env/node#6.0.0+20170115054122"
+    "mocha": "registry:dt/mocha#2.2.5+20170118061455",
+    "node": "registry:env/node#6.0.0+20170119204930"
   }
 }
