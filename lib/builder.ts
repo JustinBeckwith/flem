@@ -10,6 +10,7 @@ let uuid = require('uuid/v4');
 let Handlebars = require('handlebars');
 let logger = require('./logger');
 import ApplicationError from './applicationError';
+import ConfigReader from './configReader';
 
 export class Builder extends EventEmitter {
   
@@ -26,9 +27,10 @@ export class Builder extends EventEmitter {
    */
   public runHot(dir: string, port: number) {
     return this.build(dir).then((results) => {
-      this.runResults = this.run(dir, 'myapp', port);
-      logger.info('Running emulator on port %s', port);
-      chokidar.watch(dir, { 
+      return this.run(dir, 'myapp', port).then(runResults => {
+        this.runResults = runResults;
+        logger.info('Running emulator on port %s', port);
+        chokidar.watch(dir, { 
           ignoreInitial: true,
           ignored: results.generatedFiles
         }).on('all', (event, path) => {
@@ -38,42 +40,45 @@ export class Builder extends EventEmitter {
             this.runHot(dir, port);
           });
         });
+      });
     }); 
   }
 
   /**
    * Run a given docker image.  
    */
-  public run(dir: string, imageName: string, port: number): RunResults {
+  public run(dir: string, imageName: string, port: number): Promise<RunResults> {
     let name = uuid();
-    let envVars = [].concat(...this.getEnvVars().map(item => {
-      return ['--env', item.name + "=" + item.value];
-    }));    
-    this.emit(AppEvents.APP_STARTING);
-    let server = spawn('docker', [
-          'run', '-i', '--name', name, '-p', port + ':8080'
-        ].concat(envVars).concat([imageName]), { 
-          cwd: dir
-        })
-      .on('close', (code) => {
-        logger.debug(`RUN process exited with code ${code}`);
-      }).on('error', (err) => {
-        logger.error(`RUN process exited with err`);
-      }).on('exit', (code, signal) => {
-        logger.debug(`RUN process exited with code ${code} and signal ${signal}`);
-      });
-      server.stdout.setEncoding('utf8');
-      server.stderr.setEncoding('utf8');
-      server.stderr.on('data', (data) => {
-        logger.error(data);
-      });
-      server.stdout.on('data', (data) => {
-        logger.info(data);
-      });
-    return {
-      server: server,
-      name: name
-    };
+    return this.getEnvVars().then(envVars => {
+      let processedVars = [].concat(...envVars.map(item => {
+        return ['--env', item.name + "=" + item.value];
+      }));    
+      this.emit(AppEvents.APP_STARTING);
+      let server = spawn('docker', [
+            'run', '-i', '--name', name, '-p', port + ':8080'
+          ].concat(processedVars).concat([imageName]), { 
+            cwd: dir
+          })
+        .on('close', (code) => {
+          logger.debug(`RUN process exited with code ${code}`);
+        }).on('error', (err) => {
+          logger.error(`RUN process exited with err`);
+        }).on('exit', (code, signal) => {
+          logger.debug(`RUN process exited with code ${code} and signal ${signal}`);
+        });
+        server.stdout.setEncoding('utf8');
+        server.stderr.setEncoding('utf8');
+        server.stderr.on('data', (data) => {
+          logger.error(data);
+        });
+        server.stdout.on('data', (data) => {
+          logger.info(data);
+        });
+      return {
+        server: server,
+        name: name
+      };
+    });
   }
 
   /**
@@ -155,15 +160,18 @@ export class Builder extends EventEmitter {
     });
   }
 
-  protected getEnvVars() {
+  protected getEnvVars(): Promise<Array<any>> {
     let vars = [];
-    let service = (this.currentConfig && this.currentConfig.service) ? this.currentConfig.service : 'default';
-    vars.push({ name: "GAE_VERSION", value: "---local---" });
-    vars.push({ name: "GAE_SERVICE", value: service });
-    vars.push({ name: "GAE_INSTANCE", value: "---local---" });
-    vars.push({ name: "GCLOUD_PROJECT", value: "---local---" });
-    vars.push({ name: "PORT", value: 8080 });
-    return vars;
+    let configReader = new ConfigReader();
+    return configReader.getProject().then((result) => {
+      let service = (this.currentConfig && this.currentConfig.service) ? this.currentConfig.service : 'default';
+      vars.push({ name: "GAE_VERSION", value: "---local---" });
+      vars.push({ name: "GAE_SERVICE", value: service });
+      vars.push({ name: "GAE_INSTANCE", value: "---local---" });
+      vars.push({ name: "GCLOUD_PROJECT", value: result });
+      vars.push({ name: "PORT", value: 8080 });
+      return vars;
+    });
   }
 
   /**
