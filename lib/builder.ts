@@ -50,9 +50,9 @@ export class Builder extends EventEmitter {
   public run(dir: string, imageName: string, port: number): Promise<RunResults> {
     let name = uuid();
     return this.getEnvVars().then(envVars => {
-      let processedVars = [].concat(...envVars.map(item => {
+      let processedVars = [].concat.apply([], envVars.map(item => {
         return ['--env', item.name + "=" + item.value];
-      }));    
+      }));
       this.emit(AppEvents.APP_STARTING);
       let server = spawn('docker', [
             'run', '-i', '--name', name, '-p', port + ':8080'
