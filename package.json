@@ -5,6 +5,7 @@
   "bin": {
     "flem": "./bin/cli.js"
   },
+  "main": "lib/index.js",
   "scripts": {
     "start": "npm run build:live",
     "build:live": "tsc --watch",
