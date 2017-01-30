@@ -8,7 +8,7 @@ import RuntimeDetector from './runtimeDetector';
 import {EventEmitter} from 'events';
 let uuid = require('uuid/v4');
 let Handlebars = require('handlebars');
-let logger = require('./logger');
+import OutputManager from './outputManager';
 import ApplicationError from './applicationError';
 import ConfigReader from './configReader';
 
@@ -16,6 +16,7 @@ export class Builder extends EventEmitter {
   
   protected runResults: RunResults;
   protected currentConfig: any;
+  protected logger = new OutputManager(this);
 
   constructor() {
     super();
@@ -29,14 +30,14 @@ export class Builder extends EventEmitter {
     return this.build(dir).then((results) => {
       return this.run(dir, 'myapp', port).then(runResults => {
         this.runResults = runResults;
-        logger.info('Running emulator on port %s', port);
+        this.logger.info('Running emulator on port ' + port);
         chokidar.watch(dir, { 
           ignoreInitial: true,
           ignored: results.generatedFiles
         }).on('all', (event, path) => {
           logger.info('File changed: ' + event + ", " + path);
           this.stop().then(() => {
-            logger.info('Process stopped, rebuilding container...');
+            this.logger.info('Process stopped, rebuilding container...');
             this.runHot(dir, port);
           });
         });
@@ -60,19 +61,19 @@ export class Builder extends EventEmitter {
             cwd: dir
           })
         .on('close', (code) => {
-          logger.debug(`RUN process exited with code ${code}`);
+          this.logger.debug(`RUN process exited with code ${code}`);
         }).on('error', (err) => {
-          logger.error(`RUN process exited with err`);
+          this.logger.error(`RUN process exited with err`);
         }).on('exit', (code, signal) => {
-          logger.debug(`RUN process exited with code ${code} and signal ${signal}`);
+          this.logger.debug(`RUN process exited with code ${code} and signal ${signal}`);
         });
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          logger.error(data);
+          this.logger.error(data);
         });
         server.stdout.on('data', (data) => {
-          logger.info(data);
+          this.logger.info(data);
         });
       return {
         server: server,
@@ -91,22 +92,22 @@ export class Builder extends EventEmitter {
           'stop', this.runResults.name
         ])
       .on('close', (code) => {
-        logger.debug(`STOP process exited with code ${code}`);
+        this.logger.debug(`STOP process exited with code ${code}`);
       }).on('error', (err) => {
-        logger.error(`STOP process exited with err ${err}`);
+        this.logger.error(`STOP process exited with err ${err}`);
         return reject();
       }).on('exit', (code, signal) => {
-        logger.debug(`STOP process exited with code ${code} and signal ${signal}`);
+        this.logger.debug(`STOP process exited with code ${code} and signal ${signal}`);
         this.emit(AppEvents.APP_STOPPED);
         return resolve();
       });
       server.stdout.setEncoding('utf8');
       server.stderr.setEncoding('utf8');
       server.stderr.on('data', (data) => {
-        logger.error(data);
+        this.logger.error(data);
       });
       server.stdout.on('data', (data) => {
-        logger.info(data);
+        this.logger.info(data);
       });
     });
   }
@@ -118,28 +119,28 @@ export class Builder extends EventEmitter {
     return new Promise<BuildResults>((resolve, reject) => {
       this.emit(AppEvents.BUILD_STARTED);
       this.prepare(dir).then(generatedFiles => {
-        logger.info(`Building docker image in ${dir}...`);
+        this.logger.info(`Building docker image in ${dir}...`);
         let server = spawn('docker', [
             'build', '.', '-t', 'myapp'
           ], { 
             cwd: dir
           })
         .on('close', (code) => {
-          logger.debug(`BUILD process exited with code ${code}`);
+          this.logger.debug(`BUILD process exited with code ${code}`);
         }).on('error', (err) => {
           if (err == "Error: spawn docker ENOENT") {
             let message = "Flem requires Docker to be installed, and available on the path.  Please visit https://www.docker.com/ to get started, and try again.";
             let error = new ApplicationError(message);
             return reject(error);
           }
-          logger.error(`BUILD process exited with err ${err}`);
+          this.logger.error(`BUILD process exited with err ${err}`);
           return reject(err);
         }).on('exit', (code, signal) => {
-          logger.debug(`BUILD process exited with code ${code} and signal ${signal}`);
+          this.logger.debug(`BUILD process exited with code ${code} and signal ${signal}`);
           generatedFiles.forEach((file) => {
             fs.unlink(file, (err) => {
               if (err) {
-                logger.error("Error cleaning up file(s).");
+                this.logger.error("Error cleaning up file(s).");
               }
             })
           })
@@ -149,10 +150,10 @@ export class Builder extends EventEmitter {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          logger.error(_.trimEnd(data, ["\n"]));
+          this.logger.error(_.trimEnd(data, ["\n"]));
         });
         server.stdout.on('data', (data) => {
-          logger.info(_.trimEnd(data, ["\n"]));
+          this.logger.info(_.trimEnd(data, ["\n"]));
         });
       }).catch(err => {
         reject(err);
@@ -224,7 +225,7 @@ export class Builder extends EventEmitter {
           return resolve([]);
         }
       }).catch(err => {
-        logger.debug(err);
+        this.logger.debug(err);
         return reject(err);
       });
     });
