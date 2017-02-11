@@ -2,7 +2,7 @@
 import {Builder} from '../lib/builder';
 import * as program from 'commander';
 import ApplicationError from '../lib/applicationError';
-let winston = require('winston');
+import * as winston from 'winston';
 
 let version = require('../package.json').version;
 
@@ -14,13 +14,13 @@ program
 
 // set the logging level
 let loglevel = program['verbose'] ? 'debug' : 'info';
-winston.level = loglevel;
+winston.default.level = loglevel;
 winston.cli();
 let sourcePath = program.args[0] || process.cwd();
 let port = program['port'] || 3000;
 let builder = new Builder()
   .on('output', (output, level) => {
-    winston.apply(level, output);
+    winston.log(level, output);
   });
 
 builder.runHot(sourcePath, port)
