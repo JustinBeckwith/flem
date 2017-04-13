@@ -1,6 +1,6 @@
 {
   "name": "flem",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Flem is a local emulator for the App Engine Flexible Environment.",
   "bin": {
     "flem": "./bin/cli.js"
