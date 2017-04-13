@@ -1,7 +1,6 @@
 import Runtime from './runtimes';
 import * as path from 'path';
 import {spawn, ChildProcess} from 'child_process';
-let chokidar = require('chokidar');
 let fs = require('fs-extra');
 import * as _ from 'lodash';
 import RuntimeDetector from './runtimeDetector';
@@ -31,15 +30,16 @@ export class Builder extends EventEmitter {
       return this.run(dir, 'myapp', port).then(runResults => {
         this.runResults = runResults;
         this.logger.info('Running emulator on port ' + port);
-        chokidar.watch(dir, { 
-          ignoreInitial: true,
-          ignored: results.generatedFiles
-        }).on('all', (event, path) => {
-          logger.info('File changed: ' + event + ", " + path);
-          this.stop().then(() => {
-            this.logger.info('Process stopped, rebuilding container...');
-            this.runHot(dir, port);
-          });
+        fs.watch(dir, { 
+          recursive: true,
+        }, (event, filePath) => {
+          if (_.indexOf(results.generatedFiles, path.join(dir, filePath)) == -1) {
+            this.logger.info('File changed: ' + event + ", " + path.join(dir, filePath));
+            this.stop().then(() => {
+              this.logger.info('Process stopped, rebuilding container...');
+              this.runHot(dir, port);
+            });
+          }
         });
       });
     }); 
