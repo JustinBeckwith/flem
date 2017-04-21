@@ -10,7 +10,7 @@
     "start": "npm run build:live",
     "build:live": "tsc --watch",
     "build": "tsc --version && tsc",
-    "test": "mocha"
+    "test": "npm run build && mocha"
   },
   "repository": {
     "type": "git",
