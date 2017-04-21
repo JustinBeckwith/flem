@@ -1,6 +1,5 @@
 import {exec} from 'child_process';
-let logger = require('./logger');
-import * as _ from 'lodash';
+import logger from './logger';
 
 export default class ConfigReader {
   public getProject() {
@@ -9,7 +8,7 @@ export default class ConfigReader {
       exec(cmd, (err, stdout, stderr) => {
         let project = "";
         if (err) {
-          logger.debug(err);
+          logger.debug(err.toString());
         } else {
           project = JSON.parse(stdout).core.project;
         }

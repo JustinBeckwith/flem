@@ -1,40 +1,40 @@
 import Runtime from './runtimes';
 import * as path from 'path';
 import {spawn, ChildProcess} from 'child_process';
-let fs = require('fs-extra');
-import * as _ from 'lodash';
+import * as fs from 'fs-extra';
+import { trimEnd, indexOf } from 'lodash';
 import RuntimeDetector from './runtimeDetector';
 import {EventEmitter} from 'events';
-let uuid = require('uuid/v4');
-let Handlebars = require('handlebars');
+import * as uuid from 'uuid/v4';
+import * as Handlebars from 'handlebars';
 import OutputManager from './outputManager';
 import ApplicationError from './applicationError';
 import ConfigReader from './configReader';
 
 export class Builder extends EventEmitter {
-  
+
   protected runResults: RunResults;
   protected currentConfig: any;
   protected logger = new OutputManager(this);
 
   constructor() {
     super();
-  }  
+  }
 
   /**
    * Perform a docker build of a given directory, and then re-build when
-   * changes are made to files within the directory.  
+   * changes are made to files within the directory.
    */
   public runHot(dir: string, port: number) {
     return this.build(dir).then((results) => {
       return this.run(dir, 'myapp', port).then(runResults => {
         this.runResults = runResults;
         this.logger.info('Running emulator on port ' + port);
-        fs.watch(dir, { 
+        fs.watch(dir, {
           recursive: true,
         }, (event, filePath) => {
-          if (_.indexOf(results.generatedFiles, path.join(dir, filePath)) == -1) {
-            this.logger.info('File changed: ' + event + ", " + path.join(dir, filePath));
+          if (indexOf(results.generatedFiles, path.join(dir, filePath as string)) == -1) {
+            this.logger.info('File changed: ' + event + ", " + path.join(dir, filePath as string));
             this.stop().then(() => {
               this.logger.info('Process stopped, rebuilding container...');
               this.runHot(dir, port);
@@ -42,11 +42,11 @@ export class Builder extends EventEmitter {
           }
         });
       });
-    }); 
+    });
   }
 
   /**
-   * Run a given docker image.  
+   * Run a given docker image.
    */
   public run(dir: string, imageName: string, port: number): Promise<RunResults> {
     let name = uuid();
@@ -57,7 +57,7 @@ export class Builder extends EventEmitter {
       this.emit(AppEvents.APP_STARTING);
       let server = spawn('docker', [
             'run', '-i', '--name', name, '-p', port + ':8080'
-          ].concat(processedVars).concat([imageName]), { 
+          ].concat(processedVars).concat([imageName]), {
             cwd: dir
           })
         .on('close', (code) => {
@@ -70,10 +70,10 @@ export class Builder extends EventEmitter {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          this.logger.error(data);
+          this.logger.error(data as string);
         });
         server.stdout.on('data', (data) => {
-          this.logger.info(data);
+          this.logger.info(data as string);
         });
       return {
         server: server,
@@ -83,7 +83,7 @@ export class Builder extends EventEmitter {
   }
 
   /**
-   * Stop a given docker process. 
+   * Stop a given docker process.
    */
   public stop() {
     return new Promise((resolve, reject) => {
@@ -104,16 +104,16 @@ export class Builder extends EventEmitter {
       server.stdout.setEncoding('utf8');
       server.stderr.setEncoding('utf8');
       server.stderr.on('data', (data) => {
-        this.logger.error(data);
+        this.logger.error(data as string);
       });
       server.stdout.on('data', (data) => {
-        this.logger.info(data);
+        this.logger.info(data as string);
       });
     });
   }
 
   /**
-   * Perform the docker build of a given directory.  
+   * Perform the docker build of a given directory.
    */
   public build(dir: string): Promise<BuildResults> {
     return new Promise<BuildResults>((resolve, reject) => {
@@ -122,13 +122,13 @@ export class Builder extends EventEmitter {
         this.logger.info(`Building docker image in ${dir}...`);
         let server = spawn('docker', [
             'build', '.', '-t', 'myapp'
-          ], { 
+          ], {
             cwd: dir
           })
         .on('close', (code) => {
           this.logger.debug(`BUILD process exited with code ${code}`);
         }).on('error', (err) => {
-          if (err == "Error: spawn docker ENOENT") {
+          if (err.message == "Error: spawn docker ENOENT") {
             let message = "Flem requires Docker to be installed, and available on the path.  Please visit https://www.docker.com/ to get started, and try again.";
             let error = new ApplicationError(message);
             return reject(error);
@@ -150,10 +150,10 @@ export class Builder extends EventEmitter {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
         server.stderr.on('data', (data) => {
-          this.logger.error(_.trimEnd(data, ["\n"]));
+          this.logger.error(trimEnd(data as string, "\n"));
         });
         server.stdout.on('data', (data) => {
-          this.logger.info(_.trimEnd(data, ["\n"]));
+          this.logger.info(trimEnd(data as string, "\n"));
         });
       }).catch(err => {
         reject(err);
@@ -178,7 +178,7 @@ export class Builder extends EventEmitter {
   /**
    * If needed, generate a Dockerfile and .dockerignore file inside
    * of the given directory, based on it's contents. Returns an Array
-   * of generated file paths.  
+   * of generated file paths.
    */
   protected prepare(dir: string): Promise<Array<string>> {
     return new Promise((resolve, reject) => {

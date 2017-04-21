@@ -1,4 +1,4 @@
-let winston = require('winston');
+import * as winston from 'winston';
 
 let logger = new (winston.Logger)({
   transports: [
@@ -8,4 +8,4 @@ let logger = new (winston.Logger)({
 logger.level = winston.level;
 logger.cli();
 
-module.exports = logger;
+export default logger;

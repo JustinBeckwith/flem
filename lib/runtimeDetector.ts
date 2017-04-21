@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import _ from 'lodash';
 import Runtime from './runtimes';
 import * as YAML from 'js-yaml';
 import ApplicationError from './applicationError';
@@ -37,7 +36,7 @@ export default class runtimeDetector {
         if (err) {
           let message = "No app.yaml found in the given directory.";
           return reject(new ApplicationError(message));
-        } 
+        }
         let config = YAML.safeLoad(data);
         return resolve(config);
       });
@@ -83,7 +82,7 @@ export default class runtimeDetector {
 
   private isPHP(files: Array<string>): boolean {
     return (
-      this.containsFile(files, "composer.json") || 
+      this.containsFile(files, "composer.json") ||
       this.containsFileExtension(files, ".php")
     );
   }
