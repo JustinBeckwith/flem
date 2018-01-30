@@ -1,9 +1,8 @@
 # Flem
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/JustinBeckwith/flem.svg)](https://greenkeeper.io/)
-
 [![Build Status](https://travis-ci.org/JustinBeckwith/flem.svg?branch=master)](https://travis-ci.org/JustinBeckwith/flem)
 [![npm version](https://badge.fury.io/js/flem.svg)](https://badge.fury.io/js/flem)
+[![Greenkeeper badge](https://badges.greenkeeper.io/JustinBeckwith/flem.svg)](https://greenkeeper.io/)
 
 Flem is a local emulator that makes testing applications written for the App Engine flexible environment easier.  It manages generating docker files, building your containers, and running them in a way that's kinda mostly like running them in production. 
 
