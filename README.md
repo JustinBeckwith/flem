@@ -1,5 +1,7 @@
 # Flem
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/JustinBeckwith/flem.svg)](https://greenkeeper.io/)
+
 [![Build Status](https://travis-ci.org/JustinBeckwith/flem.svg?branch=master)](https://travis-ci.org/JustinBeckwith/flem)
 [![npm version](https://badge.fury.io/js/flem.svg)](https://badge.fury.io/js/flem)
 
