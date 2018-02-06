@@ -19,7 +19,7 @@ winston.cli();
 let sourcePath = program.args[0] || process.cwd();
 let port = program['port'] || 3000;
 let builder = new Builder()
-  .on('output', (output, level) => {
+  .on('output', (output: any, level: any) => {
     winston.log(level, output);
   });
 
@@ -34,7 +34,7 @@ builder.runHot(sourcePath, port)
   });
 
 /**
- * Make sure to clean up any docker processes hanging around on exit. 
+ * Make sure to clean up any docker processes hanging around on exit.
  */
 process.on('SIGINT', () => {
   console.log('Exit docker process...');
@@ -45,6 +45,6 @@ process.on('SIGINT', () => {
 });
 
 /**
- * Keep the process open until the user cancels. 
+ * Keep the process open until the user cancels.
  */
 process.stdin.resume();

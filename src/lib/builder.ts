@@ -2,10 +2,10 @@ import Runtime from './runtimes';
 import * as path from 'path';
 import {spawn, ChildProcess} from 'child_process';
 import * as fs from 'fs-extra';
-import { trimEnd, indexOf } from 'lodash';
+import {trimEnd, indexOf} from 'lodash';
 import RuntimeDetector from './runtimeDetector';
 import {EventEmitter} from 'events';
-import * as uuid from 'uuid/v4';
+import * as uuid from 'uuid';
 import * as Handlebars from 'handlebars';
 import OutputManager from './outputManager';
 import ApplicationError from './applicationError';
@@ -13,8 +13,8 @@ import ConfigReader from './configReader';
 
 export class Builder extends EventEmitter {
 
-  protected runResults: RunResults;
-  protected currentConfig: any;
+  protected runResults?: RunResults;
+  protected currentConfig?: any;
   protected logger = new OutputManager(this);
 
   constructor() {
@@ -49,7 +49,7 @@ export class Builder extends EventEmitter {
    * Run a given docker image.
    */
   public run(dir: string, imageName: string, port: number): Promise<RunResults> {
-    let name = uuid();
+    let name = uuid.v4();
     return this.getEnvVars().then(envVars => {
       let processedVars = [].concat.apply([], envVars.map(item => {
         return ['--env', item.name + "=" + item.value];
@@ -85,11 +85,11 @@ export class Builder extends EventEmitter {
   /**
    * Stop a given docker process.
    */
-  public stop() {
+  public stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.emit(AppEvents.APP_STOPPING);
       let server = spawn('docker', [
-          'stop', this.runResults.name
+          'stop', this.runResults!.name!
         ])
       .on('close', (code) => {
         this.logger.debug(`STOP process exited with code ${code}`);
@@ -162,7 +162,7 @@ export class Builder extends EventEmitter {
   }
 
   protected getEnvVars(): Promise<Array<any>> {
-    let vars = [];
+    let vars = new Array<NameValuePair>();
     let configReader = new ConfigReader();
     return configReader.getProject().then((result) => {
       let service = (this.currentConfig && this.currentConfig.service) ? this.currentConfig.service : 'default';
@@ -181,19 +181,21 @@ export class Builder extends EventEmitter {
    * of generated file paths.
    */
   protected prepare(dir: string): Promise<Array<string>> {
+    console.log(`PREPARE: ${dir}`);
     return new Promise((resolve, reject) => {
       RuntimeDetector.getConfig(dir).then((config: any) => {
         this.currentConfig = config;
-        let runtime = RuntimeDetector.getRuntime(config);
+        const runtime = RuntimeDetector.getRuntime(config);
         if (runtime != Runtime.Custom) {
-          let dockerfilePath = path.join(__dirname, "../dockerfiles", runtime.toString(), "Dockerfile");
-          let dockerIgnorePath = path.join(__dirname, "../dockerfiles", ".dockerignore");
-          let generatedDockerfilePath = path.join(dir, "Dockerfile");
-          let generatedDockerIgnorePath = path.join(dir, ".dockerignore");
+          const dockerfilePath = path.join(__dirname, "../../../dockerfiles", runtime.toString(), "Dockerfile");
+          console.log(`DOCKER: ${dockerfilePath}`);
+          const dockerIgnorePath = path.join(__dirname, "../../../dockerfiles", ".dockerignore");
+          const generatedDockerfilePath = path.join(dir, "Dockerfile");
+          const generatedDockerIgnorePath = path.join(dir, ".dockerignore");
           fs.readFile(dockerfilePath, 'utf-8', (err, data) => {
-            if (err) return resolve(err);
-            let template = Handlebars.compile(data);
-            let context: any = { entrypoint: config.entrypoint };
+            if (err) return reject(err);
+            const template = Handlebars.compile(data);
+            const context: any = { entrypoint: config.entrypoint };
             if (runtime == Runtime.Python) {
               if (config.runtime_config && config.runtime_config.python_version) {
                 if (config.runtime_config.python_version == 2) {
@@ -232,13 +234,13 @@ export class Builder extends EventEmitter {
   }
 }
 
-class BuildResults {
-  public generatedFiles: Array<string>;
+export class BuildResults {
+  public generatedFiles?: Array<string>;
 }
 
-class RunResults {
-  public server: ChildProcess;
-  public name: string;
+export class RunResults {
+  public server?: ChildProcess;
+  public name?: string;
 }
 
 export class AppEvents {
@@ -249,4 +251,9 @@ export class AppEvents {
   public static APP_RESTARTING = "APP_RESTARTING";
   public static APP_STOPPING = "APP_STOPPING";
   public static APP_STOPPED = "APP_STOPPED";
+}
+
+export interface NameValuePair {
+  name: string,
+  value: any
 }

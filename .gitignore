@@ -1,7 +1,7 @@
 node_modules
 .DS_Store
-bin/*.js
-lib/*.js
-test/*.js
 test/apps/python/env
 test/apps/php/vendor
+**/*.js
+build/
+.vscode

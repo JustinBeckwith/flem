@@ -9,7 +9,7 @@ export default class runtimeDetector {
   /**
    * Attempt to read the runtime from an app.yaml
    */
-  public static getRuntime(config): Runtime {
+  public static getRuntime(config: any): Runtime {
     switch(config.runtime) {
       case "node":
       case "nodejs":
@@ -26,6 +26,8 @@ export default class runtimeDetector {
         return Runtime.Java;
       case "custom":
         return Runtime.Custom;
+      default:
+        throw new Error("Unable to read runtime from config.");
     }
   }
 
