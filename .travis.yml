@@ -3,5 +3,6 @@ node_js:
   - "7"
   - "6"
   - "4"
+  - "10"
 services:
   - docker
